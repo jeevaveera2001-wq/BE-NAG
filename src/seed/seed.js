@@ -187,16 +187,16 @@ const seedData = async () => {
     ]);
     console.log('[Seeding]: Seeded Services.');
 
-    // 6. Seed Products (Retail)
+    // 6. Seed Products (Clean zero stock baseline)
     const products = await Product.insertMany([
-      { name: "L'Oreal Serie Expert Vitamino Shampoo 300ml", sku: 'LOR-VIT-300', brand: "L'Oreal Professionnel", category: 'Hair Care', purchasePrice: 550, sellingPrice: 790, currentStock: 18, minStockWarning: 5, taxPercentage: 18, createdBy: superAdmin._id },
-      { name: "L'Oreal Absolute Repair Mask 250ml", sku: 'LOR-REP-250', brand: "L'Oreal Professionnel", category: 'Hair Care', purchasePrice: 620, sellingPrice: 890, currentStock: 12, minStockWarning: 4, taxPercentage: 18, createdBy: superAdmin._id },
-      { name: 'Moroccanoil Treatment Oil 50ml', sku: 'MOR-OIL-050', brand: 'Moroccanoil', category: 'Hair Serum', purchasePrice: 1600, sellingPrice: 2200, currentStock: 8, minStockWarning: 3, taxPercentage: 18, createdBy: superAdmin._id },
-      { name: 'Beardo Godfather Beard Oil 30ml', sku: 'BRD-OIL-030', brand: 'Beardo', category: 'Men Grooming', purchasePrice: 210, sellingPrice: 350, currentStock: 24, minStockWarning: 6, taxPercentage: 18, createdBy: superAdmin._id },
-      { name: 'Urban Gabru Clay Hair Wax 100g', sku: 'URB-WAX-100', brand: 'Urban Gabru', category: 'Styling', purchasePrice: 190, sellingPrice: 320, currentStock: 3, minStockWarning: 5, taxPercentage: 18, createdBy: superAdmin._id }, // Low stock sample
-      { name: 'O3+ Professional Whitening Cream 50g', sku: 'O3P-WHT-050', brand: 'O3+', category: 'Skin Care', purchasePrice: 850, sellingPrice: 1250, currentStock: 2, minStockWarning: 4, taxPercentage: 18, createdBy: superAdmin._id }, // Low stock sample
+      { name: "L'Oreal Serie Expert Vitamino Shampoo 300ml", sku: 'LOR-VIT-300', brand: "L'Oreal Professionnel", category: 'Hair Care', purchasePrice: 550, sellingPrice: 790, currentStock: 0, minStockWarning: 5, taxPercentage: 18, createdBy: superAdmin._id },
+      { name: "L'Oreal Absolute Repair Mask 250ml", sku: 'LOR-REP-250', brand: "L'Oreal Professionnel", category: 'Hair Care', purchasePrice: 620, sellingPrice: 890, currentStock: 0, minStockWarning: 4, taxPercentage: 18, createdBy: superAdmin._id },
+      { name: 'Moroccanoil Treatment Oil 50ml', sku: 'MOR-OIL-050', brand: 'Moroccanoil', category: 'Hair Serum', purchasePrice: 1600, sellingPrice: 2200, currentStock: 0, minStockWarning: 3, taxPercentage: 18, createdBy: superAdmin._id },
+      { name: 'Beardo Godfather Beard Oil 30ml', sku: 'BRD-OIL-030', brand: 'Beardo', category: 'Men Grooming', purchasePrice: 210, sellingPrice: 350, currentStock: 0, minStockWarning: 6, taxPercentage: 18, createdBy: superAdmin._id },
+      { name: 'Urban Gabru Clay Hair Wax 100g', sku: 'URB-WAX-100', brand: 'Urban Gabru', category: 'Styling', purchasePrice: 190, sellingPrice: 320, currentStock: 0, minStockWarning: 5, taxPercentage: 18, createdBy: superAdmin._id },
+      { name: 'O3+ Professional Whitening Cream 50g', sku: 'O3P-WHT-050', brand: 'O3+', category: 'Skin Care', purchasePrice: 850, sellingPrice: 1250, currentStock: 0, minStockWarning: 4, taxPercentage: 18, createdBy: superAdmin._id },
     ]);
-    console.log('[Seeding]: Seeded Retail Products.');
+    console.log('[Seeding]: Seeded Retail Products (0 Stock baseline).');
 
     // 7. Seed Customers (Clean baseline)
     const customers = await Customer.insertMany([
