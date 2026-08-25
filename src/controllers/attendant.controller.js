@@ -66,6 +66,7 @@ export const createAttendant = async (req, res, next) => {
       assignedChair,
       shiftTiming,
       commissionPercentage,
+      baseSalary,
     } = req.body;
 
     const existing = await Attendant.findOne({ attendantId: attendantId.trim(), isDeleted: false });
@@ -83,6 +84,7 @@ export const createAttendant = async (req, res, next) => {
       assignedChair: assignedChair || null,
       shiftTiming: shiftTiming || '9:00 AM - 6:00 PM',
       commissionPercentage: commissionPercentage !== undefined ? commissionPercentage : 10,
+      baseSalary: baseSalary !== undefined ? Number(baseSalary) : 0,
       createdBy: req.user._id,
     });
 
@@ -205,18 +207,20 @@ export const getAttendantPerformance = async (req, res, next) => {
         const bills = await Bill.find(filter);
         const totalSales = bills.reduce((acc, b) => acc + (b.grandTotal || 0), 0);
         let servicesCount = 0;
-        bills.forEach((b) => {
-          servicesCount += b.items.filter((i) => i.itemType === 'service').length;
-        });
-
-        const commission = (totalSales * (att.commissionPercentage || 10)) / 100;
+        const baseSalary = att.baseSalary || 0;
+        const commissionRate = att.commissionPercentage || 10;
+        const commission = (totalSales * commissionRate) / 100;
+        const estimatedNetSalary = baseSalary + commission;
 
         return {
           attendant: att,
           totalBills: bills.length,
           totalServicesCompleted: servicesCount,
           totalSales,
+          commissionRate,
           commissionEarned: commission,
+          baseSalary,
+          estimatedNetSalary,
         };
       })
     );

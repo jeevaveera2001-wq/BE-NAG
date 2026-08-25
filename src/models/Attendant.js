@@ -50,6 +50,11 @@ const attendantSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
+    baseSalary: {
+      type: Number,
+      default: 0, // Monthly base salary in ₹
+      min: 0,
+    },
     status: {
       type: String,
       enum: ['active', 'inactive'],
