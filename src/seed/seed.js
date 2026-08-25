@@ -95,18 +95,18 @@ const seedData = async () => {
     });
     console.log('[Seeding]: Seeded Users (Super Admin, Admin, Staff).');
 
-    // 3. Seed Chairs
+    // 3. Seed Chairs (All Available by default)
     const chairs = await Chair.insertMany([
       { chairNumber: 'C-01', name: 'Styling Station 1 (Men/Unisex)', floor: 'Ground Floor', section: 'Main Styling Area', status: CHAIR_STATUS.AVAILABLE, createdBy: superAdmin._id },
-      { chairNumber: 'C-02', name: 'Styling Station 2 (Men/Unisex)', floor: 'Ground Floor', section: 'Main Styling Area', status: CHAIR_STATUS.OCCUPIED, currentCustomer: 'Karthik Raja', currentCustomerMobile: '9876501234', createdBy: superAdmin._id },
+      { chairNumber: 'C-02', name: 'Styling Station 2 (Men/Unisex)', floor: 'Ground Floor', section: 'Main Styling Area', status: CHAIR_STATUS.AVAILABLE, createdBy: superAdmin._id },
       { chairNumber: 'C-03', name: 'Premium Hair Spa & Wash Station', floor: 'Ground Floor', section: 'Hair Treatment Bay', status: CHAIR_STATUS.AVAILABLE, createdBy: superAdmin._id },
       { chairNumber: 'C-04', name: 'Women Styling Chair 1', floor: '1st Floor', section: 'Women Luxury Lounge', status: CHAIR_STATUS.AVAILABLE, createdBy: superAdmin._id },
       { chairNumber: 'C-05', name: 'Facial & Skin Care Recliner', floor: '1st Floor', section: 'Skin & Aesthetics Suite', status: CHAIR_STATUS.AVAILABLE, createdBy: superAdmin._id },
-      { chairNumber: 'C-06', name: 'Bridal & Makeup Suite', floor: '1st Floor', section: 'VIP Makeup Room', status: CHAIR_STATUS.RESERVED, createdBy: superAdmin._id },
+      { chairNumber: 'C-06', name: 'Bridal & Makeup Suite', floor: '1st Floor', section: 'VIP Makeup Room', status: CHAIR_STATUS.AVAILABLE, createdBy: superAdmin._id },
     ]);
     console.log('[Seeding]: Seeded Chairs.');
 
-    // 4. Seed Attendants
+    // 4. Seed Attendants (Clean stats)
     const attendants = await Attendant.insertMany([
       {
         attendantId: 'ATT-101',
@@ -117,8 +117,8 @@ const seedData = async () => {
         assignedChair: chairs[0]._id,
         shiftTiming: '9:00 AM - 6:00 PM',
         commissionPercentage: 12,
-        servicesCompleted: 48,
-        totalSalesGenerated: 46200,
+        servicesCompleted: 0,
+        totalSalesGenerated: 0,
         createdBy: superAdmin._id,
       },
       {
@@ -130,8 +130,8 @@ const seedData = async () => {
         assignedChair: chairs[3]._id,
         shiftTiming: '10:00 AM - 7:00 PM',
         commissionPercentage: 15,
-        servicesCompleted: 56,
-        totalSalesGenerated: 68500,
+        servicesCompleted: 0,
+        totalSalesGenerated: 0,
         createdBy: superAdmin._id,
       },
       {
@@ -143,8 +143,8 @@ const seedData = async () => {
         assignedChair: chairs[1]._id,
         shiftTiming: '11:00 AM - 8:00 PM',
         commissionPercentage: 10,
-        servicesCompleted: 34,
-        totalSalesGenerated: 31000,
+        servicesCompleted: 0,
+        totalSalesGenerated: 0,
         createdBy: superAdmin._id,
       },
       {
@@ -156,8 +156,8 @@ const seedData = async () => {
         assignedChair: chairs[4]._id,
         shiftTiming: '9:30 AM - 6:30 PM',
         commissionPercentage: 12,
-        servicesCompleted: 42,
-        totalSalesGenerated: 51200,
+        servicesCompleted: 0,
+        totalSalesGenerated: 0,
         createdBy: superAdmin._id,
       },
     ]);
@@ -198,150 +198,18 @@ const seedData = async () => {
     ]);
     console.log('[Seeding]: Seeded Retail Products.');
 
-    // 7. Seed Customers
+    // 7. Seed Customers (Clean baseline)
     const customers = await Customer.insertMany([
-      { name: 'Suresh Babu', mobile: '9840112233', email: 'suresh.babu@gmail.com', gender: 'Male', totalVisits: 6, totalSpent: 4200, lastVisit: new Date(), notes: 'Prefers Rajesh for classic fade' },
-      { name: 'Kavitha Ramachandran', mobile: '9840223344', email: 'kavitha.r@gmail.com', gender: 'Female', totalVisits: 4, totalSpent: 9800, lastVisit: new Date(), notes: 'Uses ammonia-free hair color only' },
-      { name: 'Manoj Kumar', mobile: '9840334455', email: 'manoj.k@gmail.com', gender: 'Male', totalVisits: 8, totalSpent: 5600, lastVisit: new Date(), notes: 'VIP regular customer' },
-      { name: 'Deepika S', mobile: '9840445566', email: 'deepika.s@gmail.com', gender: 'Female', totalVisits: 3, totalSpent: 7500, lastVisit: new Date(), notes: 'Interested in Bridal packages' },
-      { name: 'Arun Prasath', mobile: '9840556677', email: 'arun.prasath@gmail.com', gender: 'Male', totalVisits: 2, totalSpent: 1850, lastVisit: new Date(), notes: 'Weekend bookings only' },
+      { name: 'Suresh Babu', mobile: '9840112233', email: 'suresh.babu@gmail.com', gender: 'Male', totalVisits: 0, totalSpent: 0, lastVisit: null, notes: 'Prefers Rajesh for classic fade' },
+      { name: 'Kavitha Ramachandran', mobile: '9840223344', email: 'kavitha.r@gmail.com', gender: 'Female', totalVisits: 0, totalSpent: 0, lastVisit: null, notes: 'Uses ammonia-free hair color only' },
+      { name: 'Manoj Kumar', mobile: '9840334455', email: 'manoj.k@gmail.com', gender: 'Male', totalVisits: 0, totalSpent: 0, lastVisit: null, notes: 'VIP regular customer' },
+      { name: 'Deepika S', mobile: '9840445566', email: 'deepika.s@gmail.com', gender: 'Female', totalVisits: 0, totalSpent: 0, lastVisit: null, notes: 'Interested in Bridal packages' },
+      { name: 'Arun Prasath', mobile: '9840556677', email: 'arun.prasath@gmail.com', gender: 'Male', totalVisits: 0, totalSpent: 0, lastVisit: null, notes: 'Weekend bookings only' },
     ]);
     console.log('[Seeding]: Seeded Customers.');
 
-    // 8. Seed Historical Bills & Payments for rich charts
-    const sampleBills = [
-      {
-        billNumber: 'NAG-20260825-0001',
-        billDate: new Date(),
-        customer: { customerId: customers[0]._id, name: customers[0].name, mobile: customers[0].mobile, email: customers[0].email },
-        chair: { chairId: chairs[0]._id, chairNumber: chairs[0].chairNumber, name: chairs[0].name },
-        attendant: { attendantId: attendants[0]._id, name: attendants[0].fullName },
-        items: [
-          { itemType: 'service', itemId: services[1]._id, name: services[1].name, category: services[1].category, quantity: 1, unitPrice: 450, discountPercent: 0, discountAmount: 0, taxPercent: 18, taxAmount: 81, totalAmount: 531 },
-          { itemType: 'product', itemId: products[3]._id, name: products[3].name, category: products[3].category, quantity: 1, unitPrice: 350, discountPercent: 0, discountAmount: 0, taxPercent: 18, taxAmount: 63, totalAmount: 413 },
-        ],
-        subtotal: 800,
-        discountType: 'fixed',
-        discountValue: 0,
-        discountTotal: 0,
-        taxPercent: 18,
-        cgst: 72,
-        sgst: 72,
-        taxTotal: 144,
-        grandTotal: 944,
-        amountReceived: 944,
-        balanceAmount: 0,
-        paymentStatus: PAYMENT_STATUS.PAID,
-        paymentMethod: PAYMENT_METHODS.UPI,
-        status: BILL_STATUS.COMPLETED,
-        createdBy: staff._id,
-        createdByName: staff.fullName,
-      },
-      {
-        billNumber: 'NAG-20260825-0002',
-        billDate: new Date(),
-        customer: { customerId: customers[1]._id, name: customers[1].name, mobile: customers[1].mobile, email: customers[1].email },
-        chair: { chairId: chairs[3]._id, chairNumber: chairs[3].chairNumber, name: chairs[3].name },
-        attendant: { attendantId: attendants[1]._id, name: attendants[1].fullName },
-        items: [
-          { itemType: 'service', itemId: services[2]._id, name: services[2].name, category: services[2].category, quantity: 1, unitPrice: 650, discountPercent: 0, discountAmount: 0, taxPercent: 18, taxAmount: 117, totalAmount: 767 },
-          { itemType: 'service', itemId: services[8]._id, name: services[8].name, category: services[8].category, quantity: 1, unitPrice: 1600, discountPercent: 0, discountAmount: 0, taxPercent: 18, taxAmount: 288, totalAmount: 1888 },
-        ],
-        subtotal: 2250,
-        discountType: 'percentage',
-        discountValue: 10,
-        discountTotal: 225,
-        taxPercent: 18,
-        cgst: 182.25,
-        sgst: 182.25,
-        taxTotal: 364.5,
-        grandTotal: 2389.5,
-        amountReceived: 2389.5,
-        balanceAmount: 0,
-        paymentStatus: PAYMENT_STATUS.PAID,
-        paymentMethod: PAYMENT_METHODS.CREDIT_CARD,
-        status: BILL_STATUS.COMPLETED,
-        createdBy: admin._id,
-        createdByName: admin.fullName,
-      },
-      {
-        billNumber: 'NAG-20260824-0003',
-        billDate: new Date(Date.now() - 24 * 3600 * 1000),
-        customer: { customerId: customers[2]._id, name: customers[2].name, mobile: customers[2].mobile, email: customers[2].email },
-        chair: { chairId: chairs[1]._id, chairNumber: chairs[1].chairNumber, name: chairs[1].name },
-        attendant: { attendantId: attendants[2]._id, name: attendants[2].fullName },
-        items: [
-          { itemType: 'service', itemId: services[12]._id, name: services[12].name, category: services[12].category, quantity: 1, unitPrice: 2999, discountPercent: 0, discountAmount: 0, taxPercent: 18, taxAmount: 539.82, totalAmount: 3538.82 },
-        ],
-        subtotal: 2999,
-        discountType: 'fixed',
-        discountValue: 200,
-        discountTotal: 200,
-        taxPercent: 18,
-        cgst: 251.91,
-        sgst: 251.91,
-        taxTotal: 503.82,
-        grandTotal: 3302.82,
-        amountReceived: 3302.82,
-        balanceAmount: 0,
-        paymentStatus: PAYMENT_STATUS.PAID,
-        paymentMethod: PAYMENT_METHODS.SPLIT_PAYMENT,
-        splitPaymentDetails: { cash: 1302.82, upi: 2000, debitCard: 0, creditCard: 0, other: 0 },
-        status: BILL_STATUS.COMPLETED,
-        createdBy: superAdmin._id,
-        createdByName: superAdmin.fullName,
-      },
-      {
-        billNumber: 'NAG-20260823-0004',
-        billDate: new Date(Date.now() - 48 * 3600 * 1000),
-        customer: { customerId: customers[3]._id, name: customers[3].name, mobile: customers[3].mobile, email: customers[3].email },
-        chair: { chairId: chairs[5]._id, chairNumber: chairs[5].chairNumber, name: chairs[5].name },
-        attendant: { attendantId: attendants[1]._id, name: attendants[1].fullName },
-        items: [
-          { itemType: 'service', itemId: services[11]._id, name: services[11].name, category: services[11].category, quantity: 1, unitPrice: 8500, discountPercent: 0, discountAmount: 0, taxPercent: 18, taxAmount: 1530, totalAmount: 10030 },
-        ],
-        subtotal: 8500,
-        discountType: 'fixed',
-        discountValue: 500,
-        discountTotal: 500,
-        taxPercent: 18,
-        cgst: 720,
-        sgst: 720,
-        taxTotal: 1440,
-        grandTotal: 9440,
-        amountReceived: 9440,
-        balanceAmount: 0,
-        paymentStatus: PAYMENT_STATUS.PAID,
-        paymentMethod: PAYMENT_METHODS.UPI,
-        status: BILL_STATUS.COMPLETED,
-        createdBy: admin._id,
-        createdByName: admin.fullName,
-      },
-    ];
-
-    const insertedBills = await Bill.insertMany(sampleBills);
-
-    // Create payment records for inserted bills
-    for (const b of insertedBills) {
-      await Payment.create({
-        paymentId: `PAY-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        bill: b._id,
-        billNumber: b.billNumber,
-        customer: b.customer,
-        totalBillAmount: b.grandTotal,
-        amountPaid: b.amountReceived,
-        balanceAmount: b.balanceAmount,
-        paymentMethod: b.paymentMethod,
-        splitDetails: b.splitPaymentDetails,
-        paymentStatus: b.paymentStatus,
-        receivedBy: b.createdBy,
-        createdAt: b.billDate,
-      });
-    }
-
-    console.log('[Seeding]: Seeded Initial Bills and Payment Transactions.');
     console.log('\n=============================================================');
-    console.log('  NAGULAN Unisex Salon Database Seeded Successfully!');
+    console.log('  NAGULAN Unisex Salon Database Seeded (Clean Ledger)!');
     console.log('=============================================================');
     console.log('  Accounts Created:');
     console.log('  - Super Admin : superadmin@nagulan.com / SuperAdmin@123');
