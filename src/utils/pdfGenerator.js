@@ -1,4 +1,6 @@
 import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
 
 export const generateInvoicePDF = (bill, settings = {}) => {
   return new Promise((resolve, reject) => {
@@ -17,26 +19,37 @@ export const generateInvoicePDF = (bill, settings = {}) => {
       const franchisePhone = settings.franchiseEnquiry || '97899 61617';
       const address = settings.address || 'Nagulan salon , Indur , Dharmapuri , PIN 636803';
 
-      // Header Banner (Black background with white/gold text)
-      doc.rect(40, 40, 515, 75).fill('#121212');
+      let y = 135;
+      const bannerPathPng = path.join(process.cwd(), 'uploads', 'nagulan-banner.png');
+      const bannerPathJpg = path.join(process.cwd(), 'uploads', 'nagulan-banner.jpg');
+      const bannerPath = fs.existsSync(bannerPathPng) ? bannerPathPng : fs.existsSync(bannerPathJpg) ? bannerPathJpg : null;
 
-      doc.fillColor('#FFFFFF')
-        .font('Helvetica-Bold')
-        .fontSize(20)
-        .text(salonName.toUpperCase(), 50, 52, { align: 'center', width: 495 });
+      if (bannerPath) {
+        // Draw official banner image at top
+        doc.image(bannerPath, 40, 40, { width: 515 });
+        y = 150;
+      } else {
+        // Header Banner Fallback
+        doc.rect(40, 40, 515, 75).fill('#121212');
 
-      doc.fillColor('#C5A059')
-        .font('Helvetica')
-        .fontSize(11)
-        .text(tagline, 50, 76, { align: 'center', width: 495 });
+        doc.fillColor('#FFFFFF')
+          .font('Helvetica-Bold')
+          .fontSize(20)
+          .text(salonName.toUpperCase(), 50, 52, { align: 'center', width: 495 });
 
-      doc.fillColor('#E0E0E0')
-        .fontSize(9)
-        .text(`Franchise Enquiry: ${franchisePhone}`, 50, 93, { align: 'center', width: 495 });
+        doc.fillColor('#C5A059')
+          .font('Helvetica')
+          .fontSize(11)
+          .text(tagline, 50, 76, { align: 'center', width: 495 });
+
+        doc.fillColor('#E0E0E0')
+          .fontSize(9)
+          .text(`Franchise Enquiry: ${franchisePhone}`, 50, 93, { align: 'center', width: 495 });
+        y = 130;
+      }
 
       // Invoice Details & Customer Info
       doc.fillColor('#222222').fontSize(10);
-      let y = 130;
 
       // Left Column: Customer
       doc.font('Helvetica-Bold').text('BILLED TO:', 45, y);
