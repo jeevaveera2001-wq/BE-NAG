@@ -18,8 +18,8 @@ router.use(authenticate);
 router.get('/categories', requireStaffOrAbove, getCategories);
 router.get('/', requireStaffOrAbove, getServices);
 router.get('/:id', requireStaffOrAbove, getServiceById);
-router.post('/', requireStaffOrAbove, createService);
-router.put('/:id', requireStaffOrAbove, updateService);
+router.post('/', requireAdminOrAbove, createService);
+router.put('/:id', requireAdminOrAbove, updateService);
 router.delete('/:id', requireSuperAdmin, deleteService);
 router.post('/bulk-import', requireAdminOrAbove, bulkImportServices);
 

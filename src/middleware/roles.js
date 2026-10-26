@@ -22,4 +22,5 @@ export const authorize = (...roles) => {
 
 export const requireSuperAdmin = authorize(ROLES.SUPER_ADMIN);
 export const requireAdminOrAbove = authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN);
-export const requireStaffOrAbove = authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.STAFF);
+export const requireReceptionOrAbove = authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.RECEPTION, ROLES.STAFF);
+export const requireStaffOrAbove = authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.RECEPTION, ROLES.STAFF);
