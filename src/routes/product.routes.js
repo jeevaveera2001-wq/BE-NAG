@@ -9,7 +9,7 @@ import {
   getInventoryHistory,
 } from '../controllers/product.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireAdminOrAbove, requireStaffOrAbove } from '../middleware/roles.js';
+import { requireSuperAdmin, requireStaffOrAbove } from '../middleware/roles.js';
 
 const router = express.Router();
 
@@ -21,6 +21,6 @@ router.get('/:id', requireStaffOrAbove, getProductById);
 router.post('/', requireStaffOrAbove, createProduct);
 router.put('/:id', requireStaffOrAbove, updateProduct);
 router.post('/:id/adjust-stock', requireStaffOrAbove, adjustStock);
-router.delete('/:id', requireAdminOrAbove, deleteProduct);
+router.delete('/:id', requireSuperAdmin, deleteProduct);
 
 export default router;

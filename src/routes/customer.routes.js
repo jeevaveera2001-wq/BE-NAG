@@ -8,7 +8,7 @@ import {
   deleteCustomer,
 } from '../controllers/customer.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireAdminOrAbove, requireStaffOrAbove } from '../middleware/roles.js';
+import { requireSuperAdmin, requireStaffOrAbove } from '../middleware/roles.js';
 
 const router = express.Router();
 
@@ -19,6 +19,6 @@ router.get('/', requireStaffOrAbove, getCustomers);
 router.get('/:id', requireStaffOrAbove, getCustomerById);
 router.post('/', requireStaffOrAbove, createCustomer);
 router.put('/:id', requireStaffOrAbove, updateCustomer);
-router.delete('/:id', requireAdminOrAbove, deleteCustomer);
+router.delete('/:id', requireSuperAdmin, deleteCustomer);
 
 export default router;

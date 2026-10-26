@@ -9,7 +9,7 @@ import {
   getCategories,
 } from '../controllers/service.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireAdminOrAbove, requireStaffOrAbove } from '../middleware/roles.js';
+import { requireSuperAdmin, requireStaffOrAbove, requireAdminOrAbove } from '../middleware/roles.js';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.get('/', requireStaffOrAbove, getServices);
 router.get('/:id', requireStaffOrAbove, getServiceById);
 router.post('/', requireStaffOrAbove, createService);
 router.put('/:id', requireStaffOrAbove, updateService);
-router.delete('/:id', requireAdminOrAbove, deleteService);
+router.delete('/:id', requireSuperAdmin, deleteService);
 router.post('/bulk-import', requireAdminOrAbove, bulkImportServices);
 
 export default router;

@@ -8,7 +8,7 @@ import {
   deleteChair,
 } from '../controllers/chair.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireAdminOrAbove, requireStaffOrAbove } from '../middleware/roles.js';
+import { requireSuperAdmin, requireStaffOrAbove } from '../middleware/roles.js';
 
 const router = express.Router();
 
@@ -17,8 +17,8 @@ router.use(authenticate);
 router.get('/', requireStaffOrAbove, getChairs);
 router.get('/:id', requireStaffOrAbove, getChairById);
 router.post('/', requireStaffOrAbove, createChair);
-router.put('/:id', requireStaffOrAbove, updateChair);
+router.put('/', requireStaffOrAbove, updateChair);
 router.patch('/:id/status', requireStaffOrAbove, updateChairStatus);
-router.delete('/:id', requireAdminOrAbove, deleteChair);
+router.delete('/:id', requireSuperAdmin, deleteChair);
 
 export default router;

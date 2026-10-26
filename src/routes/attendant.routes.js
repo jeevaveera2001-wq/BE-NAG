@@ -10,7 +10,7 @@ import {
   getAttendantPerformance,
 } from '../controllers/attendant.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireAdminOrAbove, requireStaffOrAbove } from '../middleware/roles.js';
+import { requireSuperAdmin, requireStaffOrAbove } from '../middleware/roles.js';
 
 const router = express.Router();
 
@@ -24,6 +24,6 @@ router.get('/', requireStaffOrAbove, getAttendants);
 router.get('/:id', requireStaffOrAbove, getAttendantById);
 router.post('/', requireStaffOrAbove, createAttendant);
 router.put('/:id', requireStaffOrAbove, updateAttendant);
-router.delete('/:id', requireAdminOrAbove, deleteAttendant);
+router.delete('/:id', requireSuperAdmin, deleteAttendant);
 
 export default router;

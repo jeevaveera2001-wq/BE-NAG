@@ -8,12 +8,12 @@ import {
   deleteUser,
 } from '../controllers/user.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireAdminOrAbove } from '../middleware/roles.js';
+import { requireSuperAdmin } from '../middleware/roles.js';
 
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireAdminOrAbove); // Only Super Admin and Admin can access user management
+router.use(requireSuperAdmin); // Only Super Admin can access user management
 
 router.get('/', getUsers);
 router.get('/:id', getUserById);
