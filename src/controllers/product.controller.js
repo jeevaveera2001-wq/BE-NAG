@@ -84,7 +84,10 @@ export const createProduct = async (req, res, next) => {
     const { name, sku, brand, category, purchasePrice, sellingPrice, currentStock, minStockWarning, taxPercentage } =
       req.body;
 
-    const existingSku = await Product.findOne({ sku: sku.trim().toUpperCase(), isDeleted: false });
+    // Purge any old soft-deleted product with same SKU if exists
+    await Product.deleteMany({ sku: sku.trim().toUpperCase(), isDeleted: true });
+
+    const existingSku = await Product.findOne({ sku: sku.trim().toUpperCase() });
     if (existingSku) {
       return res.status(400).json({ success: false, message: `Product with SKU "${sku}" already exists.` });
     }
@@ -242,13 +245,12 @@ export const adjustStock = async (req, res, next) => {
 
 export const deleteProduct = async (req, res, next) => {
   try {
-    const product = await Product.findOne({ _id: req.params.id, isDeleted: false });
+    const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    product.isDeleted = true;
-    await product.save();
+    await Product.findByIdAndDelete(req.params.id);
 
     await logActivity({
       req,

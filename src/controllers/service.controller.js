@@ -142,13 +142,12 @@ export const updateService = async (req, res, next) => {
 
 export const deleteService = async (req, res, next) => {
   try {
-    const service = await Service.findOne({ _id: req.params.id, isDeleted: false });
+    const service = await Service.findById(req.params.id);
     if (!service) {
       return res.status(404).json({ success: false, message: 'Service not found' });
     }
 
-    service.isDeleted = true;
-    await service.save();
+    await Service.findByIdAndDelete(req.params.id);
 
     await logActivity({
       req,

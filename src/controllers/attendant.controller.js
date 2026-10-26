@@ -69,7 +69,10 @@ export const createAttendant = async (req, res, next) => {
       baseSalary,
     } = req.body;
 
-    const existing = await Attendant.findOne({ attendantId: attendantId.trim(), isDeleted: false });
+    // Purge any old soft-deleted attendant with same attendantId if exists
+    await Attendant.deleteMany({ attendantId: attendantId.trim(), isDeleted: true });
+
+    const existing = await Attendant.findOne({ attendantId: attendantId.trim() });
     if (existing) {
       return res.status(400).json({ success: false, message: `Attendant ID "${attendantId}" is already taken.` });
     }
@@ -123,13 +126,12 @@ export const updateAttendant = async (req, res, next) => {
 
 export const deleteAttendant = async (req, res, next) => {
   try {
-    const attendant = await Attendant.findOne({ _id: req.params.id, isDeleted: false });
+    const attendant = await Attendant.findById(req.params.id);
     if (!attendant) {
       return res.status(404).json({ success: false, message: 'Attendant not found' });
     }
 
-    attendant.isDeleted = true;
-    await attendant.save();
+    await Attendant.findByIdAndDelete(req.params.id);
 
     res.status(200).json({ success: true, message: 'Attendant removed successfully' });
   } catch (error) {

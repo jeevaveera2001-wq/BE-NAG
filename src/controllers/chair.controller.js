@@ -50,7 +50,10 @@ export const createChair = async (req, res, next) => {
   try {
     const { chairNumber, name, floor, section, assignedAttendant, notes, status } = req.body;
 
-    const existingChair = await Chair.findOne({ chairNumber: chairNumber.trim(), isDeleted: false });
+    // Purge any old soft-deleted chair with same number if exists
+    await Chair.deleteMany({ chairNumber: chairNumber.trim(), isDeleted: true });
+
+    const existingChair = await Chair.findOne({ chairNumber: chairNumber.trim() });
     if (existingChair) {
       return res.status(400).json({ success: false, message: `Chair #${chairNumber} already exists.` });
     }
@@ -154,13 +157,12 @@ export const updateChairStatus = async (req, res, next) => {
 
 export const deleteChair = async (req, res, next) => {
   try {
-    const chair = await Chair.findOne({ _id: req.params.id, isDeleted: false });
+    const chair = await Chair.findById(req.params.id);
     if (!chair) {
       return res.status(404).json({ success: false, message: 'Chair not found' });
     }
 
-    chair.isDeleted = true;
-    await chair.save();
+    await Chair.findByIdAndDelete(req.params.id);
 
     if (req.io) {
       req.io.emit('chair:deleted', { chairId: chair._id });
