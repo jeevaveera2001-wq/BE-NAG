@@ -18,9 +18,9 @@ router.use(authenticate);
 router.get('/categories', requireStaffOrAbove, getCategories);
 router.get('/', requireStaffOrAbove, getServices);
 router.get('/:id', requireStaffOrAbove, getServiceById);
-router.post('/', requireAdminOrAbove, createService);
-router.put('/:id', requireAdminOrAbove, updateService);
+router.post('/', requireStaffOrAbove, createService);
+router.put('/:id', requireStaffOrAbove, updateService);
 router.delete('/:id', requireSuperAdmin, deleteService);
-router.post('/bulk-import', requireAdminOrAbove, bulkImportServices);
+router.post('/bulk-import', requireStaffOrAbove, bulkImportServices);
 
 export default router;

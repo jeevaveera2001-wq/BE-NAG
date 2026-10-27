@@ -16,9 +16,9 @@ router.use(authenticate);
 
 router.get('/', requireStaffOrAbove, getChairs);
 router.get('/:id', requireStaffOrAbove, getChairById);
-router.post('/', requireAdminOrAbove, createChair);
-router.put('/', requireAdminOrAbove, updateChair);
-router.patch('/:id/status', requireAdminOrAbove, updateChairStatus);
+router.post('/', requireStaffOrAbove, createChair);
+router.put('/', requireStaffOrAbove, updateChair);
+router.patch('/:id/status', requireStaffOrAbove, updateChairStatus);
 router.delete('/:id', requireSuperAdmin, deleteChair);
 
 export default router;

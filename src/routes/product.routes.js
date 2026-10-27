@@ -18,9 +18,9 @@ router.use(authenticate);
 router.get('/history', requireStaffOrAbove, getInventoryHistory);
 router.get('/', requireStaffOrAbove, getProducts);
 router.get('/:id', requireStaffOrAbove, getProductById);
-router.post('/', requireAdminOrAbove, createProduct);
-router.put('/:id', requireAdminOrAbove, updateProduct);
-router.post('/:id/adjust-stock', requireAdminOrAbove, adjustStock);
+router.post('/', requireStaffOrAbove, createProduct);
+router.put('/:id', requireStaffOrAbove, updateProduct);
+router.post('/:id/adjust-stock', requireStaffOrAbove, adjustStock);
 router.delete('/:id', requireSuperAdmin, deleteProduct);
 
 export default router;

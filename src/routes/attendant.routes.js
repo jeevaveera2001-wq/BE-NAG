@@ -22,8 +22,8 @@ router.post('/attendance', requireStaffOrAbove, markAttendance);
 
 router.get('/', requireStaffOrAbove, getAttendants);
 router.get('/:id', requireStaffOrAbove, getAttendantById);
-router.post('/', requireAdminOrAbove, createAttendant);
-router.put('/:id', requireAdminOrAbove, updateAttendant);
+router.post('/', requireStaffOrAbove, createAttendant);
+router.put('/:id', requireStaffOrAbove, updateAttendant);
 router.delete('/:id', requireSuperAdmin, deleteAttendant);
 
 export default router;
