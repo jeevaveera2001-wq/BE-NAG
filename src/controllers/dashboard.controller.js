@@ -15,11 +15,20 @@ export const getDashboardMetrics = async (req, res, next) => {
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
+    const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
+    const endOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
+    const startOfLastWeek = new Date(startOfWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+    const endOfLastWeek = new Date(startOfWeek.getTime() - 1);
+
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
+    const endOfLastMonth = new Date(startOfMonth.getTime() - 1);
 
     // Queries for completed bills
     const baseFilter = { status: BILL_STATUS.COMPLETED };
@@ -74,6 +83,46 @@ export const getDashboardMetrics = async (req, res, next) => {
     const todaySales = todayBills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
     const weekSales = weekBills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
     const monthSales = monthBills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
+
+    // Calculate historical comparison periods for actual trend percentages
+    const yesterdayBills = allCompletedBills.filter(
+      (b) => new Date(b.billDate) >= startOfYesterday && new Date(b.billDate) <= endOfYesterday
+    );
+    const yesterdaySales = yesterdayBills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
+
+    const lastWeekBills = allCompletedBills.filter(
+      (b) => new Date(b.billDate) >= startOfLastWeek && new Date(b.billDate) <= endOfLastWeek
+    );
+    const lastWeekSales = lastWeekBills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
+
+    const lastMonthBills = allCompletedBills.filter(
+      (b) => new Date(b.billDate) >= startOfLastMonth && new Date(b.billDate) <= endOfLastMonth
+    );
+    const lastMonthSales = lastMonthBills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
+
+    // Actual trend calculator
+    const calcTrend = (current, previous, label) => {
+      if (previous > 0) {
+        const diff = ((current - previous) / previous) * 100;
+        return {
+          percentage: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`,
+          isPositive: diff >= 0,
+          label,
+        };
+      }
+      if (current > 0) {
+        return {
+          percentage: '+100%',
+          isPositive: true,
+          label,
+        };
+      }
+      return {
+        percentage: '0.0%',
+        isPositive: true,
+        label,
+      };
+    };
 
     // Payment method breakdown for this month
     const paymentBreakdown = {
@@ -149,10 +198,13 @@ export const getDashboardMetrics = async (req, res, next) => {
         summary: {
           todayBills: todayBills.length,
           todaySales,
+          todayTrend: calcTrend(todaySales, yesterdaySales, 'vs yesterday'),
           weekBills: weekBills.length,
           weekSales,
+          weekTrend: calcTrend(weekSales, lastWeekSales, 'vs last week'),
           monthBills: monthBills.length,
           monthSales,
+          monthTrend: calcTrend(monthSales, lastMonthSales, 'vs last month'),
           cashPayments: paymentBreakdown.Cash,
           upiPayments: paymentBreakdown.UPI,
           cardPayments: paymentBreakdown['Debit card'] + paymentBreakdown['Credit card'],
