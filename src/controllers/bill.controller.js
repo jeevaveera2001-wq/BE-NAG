@@ -450,12 +450,10 @@ export const editBill = async (req, res, next) => {
   try {
     const { reason, ...updateData } = req.body;
 
-    if (!reason || !reason.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Reason for editing this bill is required for audit logs.',
-      });
-    }
+    const editReason =
+      reason && reason.trim()
+        ? reason.trim()
+        : `Bill updated (${Object.keys(updateData).join(', ')}) by ${req.user.role}`;
 
     const bill = await Bill.findById(req.params.id);
     if (!bill) {
@@ -473,15 +471,65 @@ export const editBill = async (req, res, next) => {
     bill.editHistory.push({
       editedBy: req.user._id,
       editedAt: new Date(),
-      reason: reason.trim(),
+      reason: editReason,
       snapshot: bill.toObject(),
     });
+
+    // Update attendant if provided
+    if (updateData.attendant && (updateData.attendant.attendantId || updateData.attendant._id)) {
+      const targetAttendantId = (updateData.attendant.attendantId || updateData.attendant._id).toString();
+      const currentAttendantId = bill.attendant?.attendantId?.toString();
+
+      if (targetAttendantId !== currentAttendantId) {
+        const newAttendantDoc = await Attendant.findById(targetAttendantId);
+        if (newAttendantDoc) {
+          // If bill is completed, transfer attendant performance counts
+          if (bill.status === BILL_STATUS.COMPLETED) {
+            const serviceItemCount = bill.items.filter((i) => i.itemType === 'service').length;
+            const salesAmount = bill.grandTotal || 0;
+
+            if (currentAttendantId) {
+              await Attendant.findByIdAndUpdate(currentAttendantId, {
+                $inc: {
+                  servicesCompleted: -serviceItemCount,
+                  totalSalesGenerated: -salesAmount,
+                },
+              });
+            }
+
+            await Attendant.findByIdAndUpdate(newAttendantDoc._id, {
+              $inc: {
+                servicesCompleted: serviceItemCount,
+                totalSalesGenerated: salesAmount,
+              },
+            });
+          }
+
+          bill.attendant = {
+            attendantId: newAttendantDoc._id,
+            name: newAttendantDoc.fullName,
+          };
+        }
+      }
+    }
 
     // Update allowable fields
     if (updateData.customer) bill.customer = { ...bill.customer, ...updateData.customer };
     if (updateData.notes !== undefined) bill.notes = updateData.notes;
-    if (updateData.paymentMethod) bill.paymentMethod = updateData.paymentMethod;
-    if (updateData.paymentStatus) bill.paymentStatus = updateData.paymentStatus;
+    if (updateData.paymentMethod) {
+      bill.paymentMethod = updateData.paymentMethod;
+      await Payment.updateMany(
+        { bill: bill._id },
+        { paymentMethod: updateData.paymentMethod }
+      );
+    }
+    if (updateData.paymentStatus) {
+      bill.paymentStatus = updateData.paymentStatus;
+      await Payment.updateMany(
+        { bill: bill._id },
+        { paymentStatus: updateData.paymentStatus }
+      );
+    }
     if (updateData.amountReceived !== undefined) bill.amountReceived = updateData.amountReceived;
     if (updateData.balanceAmount !== undefined) bill.balanceAmount = updateData.balanceAmount;
 
@@ -493,8 +541,8 @@ export const editBill = async (req, res, next) => {
       action: ACTIVITY_ACTIONS.EDIT_BILL,
       entityType: 'Bill',
       entityId: bill._id.toString(),
-      details: `Edited bill #${bill.billNumber}. Reason: ${reason.trim()}`,
-      metadata: { billNumber: bill.billNumber, reason },
+      details: `Edited bill #${bill.billNumber}. Reason: ${editReason}`,
+      metadata: { billNumber: bill.billNumber, reason: editReason, updateData },
     });
 
     if (req.io) {

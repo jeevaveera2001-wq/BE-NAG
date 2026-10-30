@@ -8,7 +8,7 @@ import {
   downloadInvoicePDF,
 } from '../controllers/bill.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireSuperAdmin, requireStaffOrAbove } from '../middleware/roles.js';
+import { requireAdminOrAbove, requireStaffOrAbove } from '../middleware/roles.js';
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.post('/', requireStaffOrAbove, createBill);
 router.get('/', requireStaffOrAbove, getBills);
 router.get('/:id', requireStaffOrAbove, getBillById);
 router.get('/:id/pdf', requireStaffOrAbove, downloadInvoicePDF);
-router.put('/:id', requireSuperAdmin, editBill);
-router.post('/:id/cancel', requireSuperAdmin, cancelBill);
+router.put('/:id', requireAdminOrAbove, editBill);
+router.post('/:id/cancel', requireAdminOrAbove, cancelBill);
 
 export default router;
