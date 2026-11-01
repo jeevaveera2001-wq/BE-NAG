@@ -533,6 +533,75 @@ export const editBill = async (req, res, next) => {
     if (updateData.amountReceived !== undefined) bill.amountReceived = updateData.amountReceived;
     if (updateData.balanceAmount !== undefined) bill.balanceAmount = updateData.balanceAmount;
 
+    // Update status if provided (e.g. converting Draft <-> Completed by Admin/Super Admin)
+    if (updateData.status && [BILL_STATUS.COMPLETED, BILL_STATUS.DRAFT].includes(updateData.status)) {
+      const oldStatus = bill.status;
+      const newStatus = updateData.status;
+
+      if (oldStatus !== newStatus) {
+        bill.status = newStatus;
+
+        // If moved from Draft to Completed
+        if (oldStatus === BILL_STATUS.DRAFT && newStatus === BILL_STATUS.COMPLETED) {
+          // Attendant performance
+          if (bill.attendant?.attendantId) {
+            const serviceItemCount = bill.items.filter((i) => i.itemType === 'service').length;
+            const salesAmount = bill.grandTotal || 0;
+            await Attendant.findByIdAndUpdate(bill.attendant.attendantId, {
+              $inc: {
+                servicesCompleted: serviceItemCount,
+                totalSalesGenerated: salesAmount,
+              },
+            });
+          }
+
+          // Customer visits and spend
+          if (bill.customer?.customerId) {
+            await Customer.findByIdAndUpdate(bill.customer.customerId, {
+              $inc: { totalVisits: 1, totalSpent: bill.grandTotal || 0 },
+              lastVisit: bill.billDate || new Date(),
+            });
+          }
+
+          // Create payment record if it doesn't already exist
+          const existingPayment = await Payment.findOne({ bill: bill._id });
+          if (!existingPayment && bill.paymentStatus === PAYMENT_STATUS.PAID) {
+            await Payment.create({
+              bill: bill._id,
+              billNumber: bill.billNumber,
+              customer: bill.customer,
+              amount: bill.grandTotal,
+              paymentMethod: bill.paymentMethod,
+              paymentStatus: bill.paymentStatus,
+              collectedBy: req.user._id,
+            });
+          }
+        } else if (oldStatus === BILL_STATUS.COMPLETED && newStatus === BILL_STATUS.DRAFT) {
+          // If moved from Completed back to Draft
+          if (bill.attendant?.attendantId) {
+            const serviceItemCount = bill.items.filter((i) => i.itemType === 'service').length;
+            const salesAmount = bill.grandTotal || 0;
+            await Attendant.findByIdAndUpdate(bill.attendant.attendantId, {
+              $inc: {
+                servicesCompleted: -serviceItemCount,
+                totalSalesGenerated: -salesAmount,
+              },
+            });
+          }
+
+          if (bill.customer?.customerId) {
+            await Customer.findByIdAndUpdate(bill.customer.customerId, {
+              $inc: { totalVisits: -1, totalSpent: -(bill.grandTotal || 0) },
+            });
+          }
+        }
+
+        // Append administrative audit note
+        const auditNote = `[Status updated: ${oldStatus} -> ${newStatus} by ${req.user.role} (${req.user.fullName || ''}): "${editReason}"]`;
+        bill.notes = bill.notes ? `${bill.notes}\n${auditNote}` : auditNote;
+      }
+    }
+
     await bill.save();
 
     await logActivity({
