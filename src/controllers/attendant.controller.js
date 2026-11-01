@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Attendant from '../models/Attendant.js';
 import Attendance from '../models/Attendance.js';
 import Bill from '../models/Bill.js';
@@ -228,6 +229,221 @@ export const getAttendantPerformance = async (req, res, next) => {
     );
 
     res.status(200).json({ success: true, performance });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getAttendantDashboard = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { date, month } = req.query; // date: YYYY-MM-DD, month: YYYY-MM
+
+    // 1. Find attendant
+    const attendant = await Attendant.findById(id).populate('assignedChair');
+    if (!attendant) {
+      return res.status(404).json({ success: false, message: 'Attendant not found' });
+    }
+
+    // 2. Parse selected day (default: today)
+    let dayY, dayM, dayD;
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const parts = date.split('-');
+      dayY = parseInt(parts[0], 10);
+      dayM = parseInt(parts[1], 10) - 1;
+      dayD = parseInt(parts[2], 10);
+    } else {
+      const now = new Date();
+      dayY = now.getFullYear();
+      dayM = now.getMonth();
+      dayD = now.getDate();
+    }
+    const dayStart = new Date(dayY, dayM, dayD, 0, 0, 0, 0);
+    const dayEnd = new Date(dayY, dayM, dayD, 23, 59, 59, 999);
+    const formattedDay = `${dayY}-${String(dayM + 1).padStart(2, '0')}-${String(dayD).padStart(2, '0')}`;
+
+    // 3. Parse selected month (default: month of selected day, or current month)
+    let monthY, monthM;
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const parts = month.split('-');
+      monthY = parseInt(parts[0], 10);
+      monthM = parseInt(parts[1], 10) - 1;
+    } else {
+      monthY = dayY;
+      monthM = dayM;
+    }
+    const monthStart = new Date(monthY, monthM, 1, 0, 0, 0, 0);
+    const monthEnd = new Date(monthY, monthM + 1, 0, 23, 59, 59, 999);
+    const formattedMonth = `${monthY}-${String(monthM + 1).padStart(2, '0')}`;
+
+    // 4. Query bills strictly allocated to this attendant
+    const attendantObjId = mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : null;
+    const attendantFilter = attendantObjId
+      ? { $or: [{ 'attendant.attendantId': attendantObjId }, { 'attendant.attendantId': id }, { 'attendant.attendantId': String(attendant._id) }] }
+      : { 'attendant.attendantId': id };
+
+    // Month query
+    const monthBills = await Bill.find({
+      ...attendantFilter,
+      status: BILL_STATUS.COMPLETED,
+      billDate: { $gte: monthStart, $lte: monthEnd },
+    })
+      .sort({ billDate: -1 })
+      .lean();
+
+    // Day bills (filter from monthBills if day is inside month, else query)
+    let dayBills = [];
+    if (dayStart >= monthStart && dayEnd <= monthEnd) {
+      dayBills = monthBills.filter((b) => {
+        const bd = new Date(b.billDate);
+        return bd >= dayStart && bd <= dayEnd;
+      });
+    } else {
+      dayBills = await Bill.find({
+        ...attendantFilter,
+        status: BILL_STATUS.COMPLETED,
+        billDate: { $gte: dayStart, $lte: dayEnd },
+      })
+        .sort({ billDate: -1 })
+        .lean();
+    }
+
+    // Computation helper
+    const computeBreakdown = (billsList) => {
+      let total = 0;
+      let cash = 0;
+      let upi = 0;
+      let card = 0;
+      let split = 0;
+      let directCash = 0;
+      let directUpi = 0;
+      let directCard = 0;
+      let splitCash = 0;
+      let splitUpi = 0;
+      let splitCard = 0;
+
+      for (const bill of billsList) {
+        const amount = Number(bill.grandTotal) || 0;
+        total += amount;
+
+        const pm = (bill.paymentMethod || '').toLowerCase();
+        if (pm.includes('cash')) {
+          directCash += amount;
+          cash += amount;
+        } else if (pm.includes('upi')) {
+          directUpi += amount;
+          upi += amount;
+        } else if (pm.includes('card') || pm.includes('debit') || pm.includes('credit')) {
+          directCard += amount;
+          card += amount;
+        } else if (pm.includes('split')) {
+          split += amount;
+          const sp = bill.splitPaymentDetails || {};
+          const spCash = Number(sp.cash) || 0;
+          const spUpi = Number(sp.upi) || 0;
+          const spCard = (Number(sp.debitCard) || 0) + (Number(sp.creditCard) || 0);
+
+          splitCash += spCash;
+          splitUpi += spUpi;
+          splitCard += spCard;
+
+          cash += spCash;
+          upi += spUpi;
+          card += spCard;
+        } else {
+          directCash += amount;
+          cash += amount;
+        }
+      }
+
+      return {
+        total: Math.round(total * 100) / 100,
+        cash: Math.round(cash * 100) / 100,
+        upi: Math.round(upi * 100) / 100,
+        card: Math.round(card * 100) / 100,
+        split: Math.round(split * 100) / 100,
+        directCash: Math.round(directCash * 100) / 100,
+        directUpi: Math.round(directUpi * 100) / 100,
+        directCard: Math.round(directCard * 100) / 100,
+        splitCash: Math.round(splitCash * 100) / 100,
+        splitUpi: Math.round(splitUpi * 100) / 100,
+        splitCard: Math.round(splitCard * 100) / 100,
+        billsCount: billsList.length,
+      };
+    };
+
+    const dayMetrics = computeBreakdown(dayBills);
+    const monthMetrics = computeBreakdown(monthBills);
+
+    // Commission calculations for this attendant
+    const commissionRate = attendant.commissionPercentage || 10;
+    const baseSalary = attendant.baseSalary || 0;
+    const commissionEarned = Math.round(((monthMetrics.total * commissionRate) / 100) * 100) / 100;
+    const estimatedNetSalary = Math.round((baseSalary + commissionEarned) * 100) / 100;
+
+    // Day-by-day map for month
+    const dailyMap = {};
+    for (const bill of monthBills) {
+      const bd = new Date(bill.billDate);
+      const dateKey = `${bd.getFullYear()}-${String(bd.getMonth() + 1).padStart(2, '0')}-${String(bd.getDate()).padStart(2, '0')}`;
+      if (!dailyMap[dateKey]) dailyMap[dateKey] = [];
+      dailyMap[dateKey].push(bill);
+    }
+
+    const dailyBreakdown = Object.keys(dailyMap)
+      .sort((a, b) => b.localeCompare(a))
+      .map((dKey) => {
+        const metrics = computeBreakdown(dailyMap[dKey]);
+        const dayComm = Math.round(((metrics.total * commissionRate) / 100) * 100) / 100;
+        return {
+          date: dKey,
+          commission: dayComm,
+          ...metrics,
+        };
+      });
+
+    res.status(200).json({
+      success: true,
+      attendant: {
+        _id: attendant._id,
+        fullName: attendant.fullName,
+        attendantId: attendant.attendantId,
+        mobile: attendant.mobile,
+        specialization: attendant.specialization,
+        assignedChair: attendant.assignedChair,
+        baseSalary,
+        commissionPercentage: commissionRate,
+        status: attendant.status,
+      },
+      selectedDate: formattedDay,
+      selectedMonth: formattedMonth,
+      day: {
+        ...dayMetrics,
+        commission: Math.round(((dayMetrics.total * commissionRate) / 100) * 100) / 100,
+        bills: dayBills.map((b) => ({
+          _id: b._id,
+          billNumber: b.billNumber,
+          billDate: b.billDate,
+          customerName: b.customer?.name || 'Walk-in Customer',
+          customerMobile: b.customer?.mobile || '',
+          chairName: b.chair?.name || b.chair?.chairNumber || 'Standard',
+          itemsCount: b.items?.length || 0,
+          grandTotal: b.grandTotal,
+          paymentMethod: b.paymentMethod,
+          paymentStatus: b.paymentStatus,
+          splitPaymentDetails: b.splitPaymentDetails,
+        })),
+      },
+      month: {
+        ...monthMetrics,
+        commissionRate,
+        commissionEarned,
+        baseSalary,
+        estimatedNetSalary,
+        dailyBreakdown,
+      },
+    });
   } catch (error) {
     next(error);
   }

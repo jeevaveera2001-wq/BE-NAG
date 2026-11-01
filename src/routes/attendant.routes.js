@@ -8,6 +8,7 @@ import {
   markAttendance,
   getAttendanceHistory,
   getAttendantPerformance,
+  getAttendantDashboard,
 } from '../controllers/attendant.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireSuperAdmin, requireStaffOrAbove, requireAdminOrAbove } from '../middleware/roles.js';
@@ -17,6 +18,7 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/performance', requireStaffOrAbove, getAttendantPerformance);
+router.get('/:id/dashboard', requireStaffOrAbove, getAttendantDashboard);
 router.get('/attendance', requireStaffOrAbove, getAttendanceHistory);
 router.post('/attendance', requireStaffOrAbove, markAttendance);
 
