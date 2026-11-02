@@ -79,4 +79,19 @@ export const ACTIVITY_ACTIONS = {
   STOCK_ADJUSTMENT: 'STOCK_ADJUSTMENT',
   CHAIR_STATUS_CHANGE: 'CHAIR_STATUS_CHANGE',
   RECORD_PAYMENT: 'RECORD_PAYMENT',
+  CREATE_EXPENSE: 'CREATE_EXPENSE',
+  UPDATE_EXPENSE: 'UPDATE_EXPENSE',
+  DELETE_EXPENSE: 'DELETE_EXPENSE',
 };
+
+export const EXPENSE_CATEGORIES = [
+  'Salon Supplies',
+  'Tea & Refreshments',
+  'Electricity & Utilities',
+  'Rent & Maintenance',
+  'Cleaning & Housekeeping',
+  'Staff Welfare & Meals',
+  'Equipment & Tools',
+  'Marketing & Advertising',
+  'Miscellaneous / Other',
+];

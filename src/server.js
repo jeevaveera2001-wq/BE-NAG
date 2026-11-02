@@ -24,6 +24,7 @@ import paymentRoutes from './routes/payment.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import activityRoutes from './routes/activity.routes.js';
+import expenseRoutes from './routes/expense.routes.js';
 
 dotenv.config();
 
@@ -125,6 +126,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/activity-logs', activityRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 // Error Middlewares
 app.use(notFound);
