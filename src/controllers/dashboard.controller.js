@@ -386,6 +386,8 @@ export const getPresentDayMetrics = async (req, res, next) => {
         },
         hourlyComparison,
         paymentComparison,
+        hourlyData: hourlyComparison,
+        paymentData: paymentComparison,
         todayBills,
       },
     });
