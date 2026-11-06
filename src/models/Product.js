@@ -47,7 +47,7 @@ const productSchema = new mongoose.Schema(
     },
     taxPercentage: {
       type: Number,
-      default: 18,
+      default: 0,
       min: 0,
     },
     isActive: {

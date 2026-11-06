@@ -42,7 +42,7 @@ const billItemSchema = new mongoose.Schema({
   },
   taxPercent: {
     type: Number,
-    default: 18,
+    default: 0,
     min: 0,
   },
   taxAmount: {
@@ -125,7 +125,7 @@ const billSchema = new mongoose.Schema(
     },
     taxPercent: {
       type: Number,
-      default: 18,
+      default: 0,
     },
     cgst: {
       type: Number,
@@ -163,7 +163,7 @@ const billSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       enum: Object.values(PAYMENT_METHODS),
-      default: PAYMENT_METHODS.CASH,
+      required: [true, 'Payment method is required'],
     },
     splitPaymentDetails: {
       cash: { type: Number, default: 0 },

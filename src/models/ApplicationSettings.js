@@ -51,15 +51,15 @@ const applicationSettingsSchema = new mongoose.Schema(
     },
     defaultGstPercent: {
       type: Number,
-      default: 18,
+      default: 0,
     },
     cgstPercent: {
       type: Number,
-      default: 9,
+      default: 0,
     },
     sgstPercent: {
       type: Number,
-      default: 9,
+      default: 0,
     },
     currencySymbol: {
       type: String,

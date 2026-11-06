@@ -60,7 +60,7 @@ export const generateInvoicePDF = (bill, settings = {}) => {
       }
 
       // Right Column: Invoice Info
-      doc.font('Helvetica-Bold').text(`TAX INVOICE: ${bill.billNumber}`, 340, y, { align: 'right' });
+      doc.font('Helvetica-Bold').text(`INVOICE: ${bill.billNumber}`, 340, y, { align: 'right' });
       doc.font('Helvetica').text(`Date: ${new Date(bill.billDate).toLocaleString('en-IN')}`, 340, y + 15, { align: 'right' });
       doc.text(`Attendant: ${bill.attendant?.name || 'Salon Staff'}`, 340, y + 28, { align: 'right' });
       doc.text(`Chair: ${bill.chair?.name || bill.chair?.chairNumber || 'Styling Station'}`, 340, y + 41, { align: 'right' });
@@ -109,16 +109,6 @@ export const generateInvoicePDF = (bill, settings = {}) => {
       if (bill.discountTotal > 0) {
         doc.text(`Discount (${bill.discountType === 'percentage' ? `${bill.discountValue}%` : 'Flat'}):`, summaryX, y);
         doc.text(`- ₹ ${bill.discountTotal.toFixed(2)}`, valX, y, { width: 75, align: 'right' });
-        y += 15;
-      }
-
-      if (bill.cgst > 0 || bill.sgst > 0) {
-        doc.text('CGST (9%):', summaryX, y);
-        doc.text(`₹ ${bill.cgst.toFixed(2)}`, valX, y, { width: 75, align: 'right' });
-        y += 15;
-
-        doc.text('SGST (9%):', summaryX, y);
-        doc.text(`₹ ${bill.sgst.toFixed(2)}`, valX, y, { width: 75, align: 'right' });
         y += 15;
       }
 

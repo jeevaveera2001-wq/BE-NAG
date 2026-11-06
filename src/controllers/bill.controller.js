@@ -52,19 +52,26 @@ export const createBill = async (req, res, next) => {
       discountType = 'fixed',
       discountValue = 0,
       discountTotal = 0,
-      taxPercent = 18,
+      taxPercent = 0,
       cgst = 0,
       sgst = 0,
       taxTotal = 0,
       grandTotal,
       amountReceived = 0,
       balanceAmount = 0,
-      paymentMethod = 'Cash',
+      paymentMethod,
       splitPaymentDetails,
       paymentStatus = PAYMENT_STATUS.PAID,
       notes = '',
       status = BILL_STATUS.COMPLETED,
     } = req.body;
+
+    if (!paymentMethod || !paymentMethod.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment method is required. Please select Cash, UPI, Debit card, Credit card, Split payment, or Other.',
+      });
+    }
 
     if (!customer?.name || !customer?.mobile) {
       return res.status(400).json({

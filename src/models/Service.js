@@ -38,7 +38,7 @@ const serviceSchema = new mongoose.Schema(
     },
     taxPercentage: {
       type: Number,
-      default: 18, // GST %
+      default: 0,
       min: 0,
     },
     isActive: {
