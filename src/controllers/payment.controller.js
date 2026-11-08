@@ -9,6 +9,7 @@ export const getPayments = async (req, res, next) => {
       search = '',
       paymentMethod,
       paymentStatus,
+      date,
       startDate,
       endDate,
       page = 1,
@@ -21,7 +22,13 @@ export const getPayments = async (req, res, next) => {
 
     if (search) {
       const regex = new RegExp(search.trim(), 'i');
-      query.$or = [{ paymentId: regex }, { billNumber: regex }, { 'customer.name': regex }, { 'customer.mobile': regex }, { transactionRefId: regex }];
+      query.$or = [
+        { paymentId: regex },
+        { billNumber: regex },
+        { 'customer.name': regex },
+        { 'customer.mobile': regex },
+        { transactionRefId: regex },
+      ];
     }
 
     if (paymentMethod && paymentMethod !== 'All') {
@@ -32,10 +39,27 @@ export const getPayments = async (req, res, next) => {
       query.paymentStatus = paymentStatus;
     }
 
-    if (startDate || endDate) {
+    // Determine effective date range
+    let effectiveStartDate = startDate || date || '';
+    let effectiveEndDate = endDate || date || '';
+
+    // If only one date is provided, default the other to the same date to target that single day
+    if (effectiveStartDate && !effectiveEndDate) effectiveEndDate = effectiveStartDate;
+    if (!effectiveStartDate && effectiveEndDate) effectiveStartDate = effectiveEndDate;
+
+    if (effectiveStartDate || effectiveEndDate) {
       query.createdAt = {};
-      if (startDate) query.createdAt.$gte = new Date(new Date(startDate).setHours(0, 0, 0, 0));
-      if (endDate) query.createdAt.$lte = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+      if (/^\d{4}-\d{2}-\d{2}$/.test(effectiveStartDate)) {
+        query.createdAt.$gte = new Date(`${effectiveStartDate}T00:00:00+05:30`);
+      } else {
+        query.createdAt.$gte = new Date(new Date(effectiveStartDate).setHours(0, 0, 0, 0));
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}$/.test(effectiveEndDate)) {
+        query.createdAt.$lte = new Date(`${effectiveEndDate}T23:59:59.999+05:30`);
+      } else {
+        query.createdAt.$lte = new Date(new Date(effectiveEndDate).setHours(23, 59, 59, 999));
+      }
     }
 
     const pageNum = parseInt(page, 10) || 1;
@@ -45,7 +69,13 @@ export const getPayments = async (req, res, next) => {
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-    const [payments, total] = await Promise.all([
+    // Filter for summary calculations - exclude unpaid/cancelled unless explicitly filtered
+    const summaryQuery = { ...query };
+    if (!paymentStatus || paymentStatus === 'All') {
+      summaryQuery.paymentStatus = { $ne: PAYMENT_STATUS.UNPAID };
+    }
+
+    const [payments, total, allMatchingPayments] = await Promise.all([
       Payment.find(query)
         .populate('bill', 'billNumber grandTotal items status')
         .populate('receivedBy', 'fullName username')
@@ -53,7 +83,140 @@ export const getPayments = async (req, res, next) => {
         .skip(skip)
         .limit(limitNum),
       Payment.countDocuments(query),
+      Payment.find(summaryQuery)
+        .select('amountPaid paymentMethod splitDetails createdAt paymentStatus billNumber totalBillAmount')
+        .lean(),
     ]);
+
+    // Compute complete summary & per-date breakdown
+    const summary = {
+      totalAmount: 0,
+      cash: 0,
+      upi: 0,
+      card: 0,
+      split: 0,
+      directCash: 0,
+      directUpi: 0,
+      directCard: 0,
+      splitCash: 0,
+      splitUpi: 0,
+      splitCard: 0,
+      totalTransactions: allMatchingPayments.length,
+    };
+
+    const dateMap = {};
+
+    for (const p of allMatchingPayments) {
+      const amount = Number(p.amountPaid) || 0;
+      summary.totalAmount += amount;
+
+      // Extract IST date string (YYYY-MM-DD)
+      const istDateStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date(p.createdAt));
+
+      if (!dateMap[istDateStr]) {
+        dateMap[istDateStr] = {
+          date: istDateStr,
+          totalAmount: 0,
+          cash: 0,
+          upi: 0,
+          card: 0,
+          split: 0,
+          directCash: 0,
+          directUpi: 0,
+          directCard: 0,
+          splitCash: 0,
+          splitUpi: 0,
+          splitCard: 0,
+          count: 0,
+        };
+      }
+
+      const d = dateMap[istDateStr];
+      d.totalAmount += amount;
+      d.count += 1;
+
+      const pm = (p.paymentMethod || '').toLowerCase();
+      if (pm.includes('cash')) {
+        summary.directCash += amount;
+        summary.cash += amount;
+        d.directCash += amount;
+        d.cash += amount;
+      } else if (pm.includes('upi')) {
+        summary.directUpi += amount;
+        summary.upi += amount;
+        d.directUpi += amount;
+        d.upi += amount;
+      } else if (pm.includes('card')) {
+        summary.directCard += amount;
+        summary.card += amount;
+        d.directCard += amount;
+        d.card += amount;
+      } else if (pm.includes('split')) {
+        summary.split += amount;
+        d.split += amount;
+
+        const sp = p.splitDetails || {};
+        const spCash = Number(sp.cash) || 0;
+        const spUpi = Number(sp.upi) || 0;
+        const spCard = (Number(sp.debitCard) || 0) + (Number(sp.creditCard) || 0);
+
+        summary.splitCash += spCash;
+        summary.splitUpi += spUpi;
+        summary.splitCard += spCard;
+
+        summary.cash += spCash;
+        summary.upi += spUpi;
+        summary.card += spCard;
+
+        d.splitCash += spCash;
+        d.splitUpi += spUpi;
+        d.splitCard += spCard;
+
+        d.cash += spCash;
+        d.upi += spUpi;
+        d.card += spCard;
+      } else {
+        summary.directCash += amount;
+        summary.cash += amount;
+        d.directCash += amount;
+        d.cash += amount;
+      }
+    }
+
+    const round = (val) => Math.round((Number(val) || 0) * 100) / 100;
+    summary.totalAmount = round(summary.totalAmount);
+    summary.cash = round(summary.cash);
+    summary.upi = round(summary.upi);
+    summary.card = round(summary.card);
+    summary.split = round(summary.split);
+    summary.directCash = round(summary.directCash);
+    summary.directUpi = round(summary.directUpi);
+    summary.directCard = round(summary.directCard);
+    summary.splitCash = round(summary.splitCash);
+    summary.splitUpi = round(summary.splitUpi);
+    summary.splitCard = round(summary.splitCard);
+
+    const dateBreakdown = Object.values(dateMap)
+      .map((item) => ({
+        ...item,
+        totalAmount: round(item.totalAmount),
+        cash: round(item.cash),
+        upi: round(item.upi),
+        card: round(item.card),
+        split: round(item.split),
+        directCash: round(item.directCash),
+        directUpi: round(item.directUpi),
+        directCard: round(item.directCard),
+        splitCash: round(item.splitCash),
+        splitUpi: round(item.splitUpi),
+        splitCard: round(item.splitCard),
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
 
     res.status(200).json({
       success: true,
@@ -63,6 +226,13 @@ export const getPayments = async (req, res, next) => {
         page: pageNum,
         limit: limitNum,
         totalPages: Math.ceil(total / limitNum),
+      },
+      summary,
+      dateBreakdown,
+      selectedDateRange: {
+        startDate: effectiveStartDate || null,
+        endDate: effectiveEndDate || null,
+        isSingleDate: !!(effectiveStartDate && effectiveStartDate === effectiveEndDate),
       },
     });
   } catch (error) {
