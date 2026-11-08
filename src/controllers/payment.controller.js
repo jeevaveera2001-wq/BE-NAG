@@ -1,7 +1,7 @@
 import Payment from '../models/Payment.js';
 import Bill from '../models/Bill.js';
 import { logActivity } from '../middleware/auditLogger.js';
-import { ACTIVITY_ACTIONS, PAYMENT_STATUS } from '../config/constants.js';
+import { ACTIVITY_ACTIONS, PAYMENT_STATUS, ROLES } from '../config/constants.js';
 
 export const getPayments = async (req, res, next) => {
   try {
@@ -46,6 +46,18 @@ export const getPayments = async (req, res, next) => {
     // If only one date is provided, default the other to the same date to target that single day
     if (effectiveStartDate && !effectiveEndDate) effectiveEndDate = effectiveStartDate;
     if (!effectiveStartDate && effectiveEndDate) effectiveStartDate = effectiveEndDate;
+
+    // All-time unrestricted access is reserved exclusively for Super Admin
+    if (req.user?.role !== ROLES.SUPER_ADMIN && !effectiveStartDate && !effectiveEndDate) {
+      const todayStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+      effectiveStartDate = todayStr;
+      effectiveEndDate = todayStr;
+    }
 
     if (effectiveStartDate || effectiveEndDate) {
       query.createdAt = {};
