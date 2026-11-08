@@ -155,19 +155,13 @@ export const getPayments = async (req, res, next) => {
       const pm = (p.paymentMethod || '').toLowerCase();
       if (pm.includes('cash')) {
         summary.directCash += amount;
-        summary.cash += amount;
         d.directCash += amount;
-        d.cash += amount;
       } else if (pm.includes('upi')) {
         summary.directUpi += amount;
-        summary.upi += amount;
         d.directUpi += amount;
-        d.upi += amount;
       } else if (pm.includes('card')) {
         summary.directCard += amount;
-        summary.card += amount;
         d.directCard += amount;
-        d.card += amount;
       } else if (pm.includes('split')) {
         summary.split += amount;
         d.split += amount;
@@ -181,24 +175,24 @@ export const getPayments = async (req, res, next) => {
         summary.splitUpi += spUpi;
         summary.splitCard += spCard;
 
-        summary.cash += spCash;
-        summary.upi += spUpi;
-        summary.card += spCard;
-
         d.splitCash += spCash;
         d.splitUpi += spUpi;
         d.splitCard += spCard;
-
-        d.cash += spCash;
-        d.upi += spUpi;
-        d.card += spCard;
       } else {
         summary.directCash += amount;
-        summary.cash += amount;
         d.directCash += amount;
-        d.cash += amount;
       }
     }
+
+    // Set mutually exclusive category totals that sum up exactly to totalAmount
+    summary.cash = summary.directCash;
+    summary.upi = summary.directUpi;
+    summary.card = summary.directCard;
+
+    // Calculate net settlement amounts (Direct + Split portion)
+    summary.netCash = summary.directCash + summary.splitCash;
+    summary.netUpi = summary.directUpi + summary.splitUpi;
+    summary.netCard = summary.directCard + summary.splitCard;
 
     const round = (val) => Math.round((Number(val) || 0) * 100) / 100;
     summary.totalAmount = round(summary.totalAmount);
@@ -212,22 +206,38 @@ export const getPayments = async (req, res, next) => {
     summary.splitCash = round(summary.splitCash);
     summary.splitUpi = round(summary.splitUpi);
     summary.splitCard = round(summary.splitCard);
+    summary.netCash = round(summary.netCash);
+    summary.netUpi = round(summary.netUpi);
+    summary.netCard = round(summary.netCard);
 
     const dateBreakdown = Object.values(dateMap)
-      .map((item) => ({
-        ...item,
-        totalAmount: round(item.totalAmount),
-        cash: round(item.cash),
-        upi: round(item.upi),
-        card: round(item.card),
-        split: round(item.split),
-        directCash: round(item.directCash),
-        directUpi: round(item.directUpi),
-        directCard: round(item.directCard),
-        splitCash: round(item.splitCash),
-        splitUpi: round(item.splitUpi),
-        splitCard: round(item.splitCard),
-      }))
+      .map((item) => {
+        const cash = round(item.directCash);
+        const upi = round(item.directUpi);
+        const card = round(item.directCard);
+        const split = round(item.split);
+        const netCash = round(item.directCash + item.splitCash);
+        const netUpi = round(item.directUpi + item.splitUpi);
+        const netCard = round(item.directCard + item.splitCard);
+
+        return {
+          ...item,
+          totalAmount: round(item.totalAmount),
+          cash,
+          upi,
+          card,
+          split,
+          directCash: cash,
+          directUpi: upi,
+          directCard: card,
+          splitCash: round(item.splitCash),
+          splitUpi: round(item.splitUpi),
+          splitCard: round(item.splitCard),
+          netCash,
+          netUpi,
+          netCard,
+        };
+      })
       .sort((a, b) => b.date.localeCompare(a.date));
 
     res.status(200).json({
